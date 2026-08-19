@@ -1,141 +1,193 @@
 # LangFORM
 
-**Version:** v0.0.1-2026.08.18
+**Version:** v0.0.2-2026.08.18
 
-LangFORM is a context, memory, retrieval, and orchestration framework for LLM-based and agentic AI applications.
+LangFORM is an open-source context, memory, retrieval, and orchestration framework for LLM and agentic AI applications.
 
-LangFORM is designed to sit between an application and the models it uses. The application remains responsible for its own UI, agent runtime, external tools, and business logic. LangFORM focuses on preparing and managing the information that models need.
+Its purpose is simple:
 
-## Core Purpose
+> Give models the right context, not all available context.
 
-LangFORM helps an application provide the right context to a model instead of blindly sending entire files, long conversation histories, or unrelated information.
+LangFORM can register user-authorized assets, extract text, create semantically useful Context Frames, store metadata, retrieve relevant frames for a user query, maintain lightweight conversation memory, and prepare a structured Context Package for a Main LLM or surrounding agent application.
 
-The framework uses a local Small Language Model (SLM) to help analyze user requests, understand registered assets, organize information, create Context Frames, retrieve relevant information, and support context orchestration.
+## What Works in v0.0.2
 
-A Main LLM can then receive the user's request together with selected Context Frames and relevant memory.
+This version includes working Python code for:
 
-If the supplied context is not sufficient, additional context can be requested and retrieved before the final response is produced.
+- Asset registration
+- Local-file references
+- Uploaded-asset registration
+- Technical and semantic metadata
+- Text extraction from TXT, MD, JSON, and CSV files
+- Optional PDF, DOCX, and XLSX extraction when the related packages are installed
+- Context Frame creation
+- Context Frame persistence
+- Simple relevance retrieval
+- Conversation memory
+- Context Package creation
+- JSON-based registries
+- Optional local SLM communication through Ollama
+- Command-line interface
+- Basic tests
 
-## Context Frames
+The framework is intentionally UI-independent. A developer can use LangFORM underneath a web app, desktop app, API, CLI, or another agent runtime.
 
-A Context Frame is a semantically meaningful unit of information.
+## Installation
 
-A Context Frame is not simply a fixed-size text chunk. It should represent a coherent piece of meaning such as a section, concept, result, definition, argument, procedure, or other useful information unit.
+Clone the repository:
 
-Context Frames retain provenance so LangFORM can identify where the information came from.
+```bash
+git clone https://github.com/nurdin-kaparov/LangFORM.git
+cd LangFORM
+```
 
-## Assets
+Create and activate a virtual environment if desired, then install:
 
-An Asset is a user-authorized information resource.
+```bash
+pip install -e .
+```
 
-In v0.0.1, an Asset may be:
-- a file uploaded through the application
-- a local file referenced by its path
-- a file available through a web URL
+Optional file-reader support:
 
-A local file remains in its original location. LangFORM stores a reference to it rather than moving it.
+```bash
+pip install -e ".[documents]"
+```
 
-A file uploaded through an application may be stored in LangFORM's managed `uploaded_assets` area.
+Optional Ollama support:
 
-LangFORM maintains an Asset Record for each registered Asset.
+```bash
+pip install -e ".[ollama]"
+```
 
-## Asset Metadata
+Install everything:
 
-Asset Metadata can contain technical and semantic information.
+```bash
+pip install -e ".[all]"
+```
 
-Technical metadata may include:
-- Asset ID
-- file name
-- location
-- reference type
-- file type
-- file size
-- creation date
-- modification date
-- hash or version information
-- availability status
+## Quick Test
 
-Semantic metadata may include:
-- content summary
-- document type
-- topics
-- keywords
-- important entities
-- relationships to other Assets
-- related Context Frame IDs
+After installation:
 
-## Local SLM
+```bash
+langform demo
+```
 
-The local SLM supports LangFORM's context-management work.
+or:
 
-Its responsibilities can include:
-- analyzing the user's request
-- deciding what information is needed
-- analyzing Assets
-- creating summaries
-- creating or updating metadata
-- identifying semantic sections
-- creating Context Frames
-- retrieving relevant Context Frames
-- organizing conversation memory
-- helping determine whether more context is required
+```bash
+python -m langform demo
+```
 
-The local SLM is not normally the final user-facing reasoning model when a Main LLM is available.
+This runs a self-contained demo without requiring an external LLM.
 
-## Main LLM
+## Analyze a File
 
-The Main LLM is typically responsible for deeper reasoning and final response generation.
+```bash
+langform analyze path/to/file.txt
+```
 
-LangFORM provides the Main LLM with structured context prepared from relevant Context Frames, memory, and the user's current request.
+LangFORM will:
 
-The Main LLM may indicate that the current context is sufficient or that additional information is needed.
+1. register the file as an Asset,
+2. extract its text,
+3. generate metadata,
+4. create Context Frames,
+5. store the records locally.
 
-## Platform Independence
+## Ask for Context
 
-LangFORM does not control the developer's user interface.
+```bash
+langform query "What does the document say about memory?"
+```
 
-The surrounding application decides:
-- how users interact with the application
-- which Main LLM is used
-- which external tools are available
-- how web search is performed
-- how Python or other code is executed
-- how external APIs are called
-- how final results are displayed
+LangFORM searches stored Context Frames and returns a Context Package as JSON.
 
-LangFORM exposes structured inputs and outputs so the application can decide how to use them.
+## Python Example
 
-## Tool Boundary
+```python
+from langform import LangFORM
 
-File-reading and information-extraction capabilities are part of LangFORM's context-processing responsibilities.
+lf = LangFORM(workspace=".langform")
 
-The required parser libraries may be installed and managed as dependencies rather than implemented directly inside LangFORM.
+asset = lf.register_asset("notes.txt")
+lf.analyze_asset(asset.asset_id)
 
-General agent tools such as web search, Python execution, shell execution, email, browser actions, and external APIs belong to the surrounding platform or agent runtime.
+package = lf.prepare_context(
+    "What does the file say about retrieval?",
+    top_k=5,
+)
 
-LangFORM may receive the results of those actions and prepare them as context for further model reasoning.
+print(package.to_dict())
+```
 
-## Memory
+## Optional Ollama Local SLM
 
-LangFORM manages conversation and contextual memory that may be useful in future model interactions.
+If Ollama is running locally:
 
-The framework should avoid blindly resending complete conversation history when a smaller relevant memory representation is sufficient.
+```python
+from langform.models import OllamaSLM
 
-## Initial Scope
+slm = OllamaSLM(model="gemma3:4b")
+print(slm.generate("Summarize this sentence: LangFORM manages context."))
+```
 
-Version v0.0.1 focuses on:
-- terminology
-- system instructions for the local SLM
-- Asset registration concepts
-- metadata concepts
-- Context Frames
-- retrieval
-- conversation context
-- model-to-model context orchestration
-- a stable interface between LangFORM and the surrounding application
+The core LangFORM package does not require Ollama to run.
 
-## Core Principle
+## Asset Handling
 
-LangFORM does not try to give a model more context.
+LangFORM distinguishes among:
 
-LangFORM tries to give the model the right context.
+- `local_path`: the original file remains where the user keeps it.
+- `uploaded_file`: the application may copy the uploaded file into LangFORM's managed `uploaded_assets` folder.
+- `web_url`: registered as a reference in v0.0.2. Automatic downloading is intentionally not performed by the core.
+
+## Workspace
+
+Runtime data is stored separately from source code:
+
+```text
+.langform/
+├── registry/
+│   └── assets.json
+├── frames/
+│   └── frames.json
+├── memory/
+│   └── conversation.json
+└── uploaded_assets/
+```
+
+The workspace can be changed when creating `LangFORM`.
+
+## Current Retrieval Method
+
+v0.0.2 uses a transparent keyword-overlap scoring method. It is deliberately simple and dependency-free.
+
+Later versions can add embedding-based retrieval, hybrid retrieval, reranking, and more advanced semantic orchestration without changing the basic Context Frame interface.
+
+## Important Boundary
+
+LangFORM focuses on context intelligence.
+
+The surrounding platform or agent runtime remains responsible for general-purpose actions such as:
+
+- web search
+- Python execution
+- shell execution
+- browser actions
+- email
+- external API calls
+
+LangFORM can receive results from those tools and convert useful information into context.
+
+## Core Files
+
+- `Terminologies.md`
+- `System_Instructions.md`
+- `Orchestration_Protocol.md`
+
+These files define LangFORM's shared language, local SLM role, and structured communication principles.
+
+## License
+
+MIT License.

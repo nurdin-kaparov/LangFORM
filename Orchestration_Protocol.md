@@ -2,65 +2,31 @@
 
 ## Purpose
 
-This protocol defines how LangFORM structures context-related communication between the local SLM, the Main LLM, and the surrounding platform application.
+This protocol defines LangFORM's structured communication principles with local SLMs, Main LLMs, and surrounding applications.
 
-LangFORM does not require the surrounding application to use a specific UI, model provider, tool provider, or agent framework.
-
-The application decides how to use LangFORM outputs.
-
-## Core Principle
-
-LangFORM prepares context and communicates requirements through structured outputs.
-
-The surrounding application remains responsible for executing general external actions such as web search, code execution, browser operations, email actions, and external API calls.
+LangFORM does not require a specific UI, LLM provider, tool provider, or agent framework.
 
 ## Basic Flow
 
-1. The application sends a user request and available resource references to LangFORM.
-2. The local SLM analyzes the request.
+1. The application supplies a user request and optional Asset references.
+2. LangFORM analyzes or processes required Assets.
 3. LangFORM retrieves or creates relevant Context Frames.
-4. LangFORM prepares a Context Package.
-5. The Context Package is provided to the Main LLM or returned to the application, depending on the integration.
-6. The Main LLM may determine that the context is sufficient, more context is needed, or an External Action is needed.
-7. LangFORM performs additional context retrieval when appropriate.
-8. External Action requests are returned to the surrounding application.
-9. The application may return action results to LangFORM.
-10. LangFORM may convert useful results into Context Frames and continue the context cycle.
-
-## LangFORM Input
-
-A LangFORM request may contain:
-
-```json
-{
-  "session_id": "session_001",
-  "user_query": "Compare the findings in these reports.",
-  "asset_references": ["asset_001", "asset_002"],
-  "external_results": []
-}
-```
+4. LangFORM builds a Context Package.
+5. The package is provided to the next model or returned to the application.
+6. More context may be requested if needed.
+7. External actions are requested from the surrounding application.
+8. External results can be returned to LangFORM and converted into Context Frames.
 
 ## Context Package
 
-A standard Context Package may contain:
+Example:
 
 ```json
 {
   "status": "context_ready",
   "session_id": "session_001",
-  "user_query": "Compare the findings in these reports.",
-  "context_frames": [
-    {
-      "frame_id": "frame_001",
-      "asset_id": "asset_001",
-      "content": "...",
-      "summary": "...",
-      "provenance": {
-        "source": "...",
-        "location": "..."
-      }
-    }
-  ],
+  "user_query": "Compare the findings.",
+  "context_frames": [],
   "memory": [],
   "request": null
 }
@@ -68,37 +34,13 @@ A standard Context Package may contain:
 
 ## Status Values
 
-### context_ready
-Relevant context has been prepared and is ready for the next model or application step.
+- `context_ready`
+- `more_context_required`
+- `external_action_required`
+- `final`
+- `error`
 
-### more_context_required
-Additional Context Frames or memory are needed.
-
-### external_action_required
-The workflow requires the surrounding application to perform an action.
-
-### final
-No additional LangFORM context operation is required.
-
-### error
-LangFORM cannot continue until an error is resolved.
-
-## Requesting More Context
-
-Example:
-
-```json
-{
-  "status": "more_context_required",
-  "request": {
-    "type": "retrieve_context",
-    "information_need": "Find the methodology used to select participants.",
-    "asset_scope": ["asset_001"]
-  }
-}
-```
-
-## Requesting an External Action
+## External Action Request
 
 Example:
 
@@ -108,7 +50,7 @@ Example:
   "request": {
     "action_id": "action_001",
     "type": "web_search",
-    "description": "Find the latest published market price.",
+    "description": "Find current market data.",
     "input": {
       "query": "..."
     }
@@ -116,13 +58,11 @@ Example:
 }
 ```
 
-LangFORM does not define how the application must perform the action.
+LangFORM does not prescribe how the platform performs the requested action.
 
-The application may use any compatible tool, provider, runtime, or implementation.
+## External Action Result
 
-## Returning an External Action Result
-
-The surrounding application may return:
+Example:
 
 ```json
 {
@@ -132,33 +72,12 @@ The surrounding application may return:
 }
 ```
 
-LangFORM may analyze the result and create one or more Context Frames when the result is useful for subsequent reasoning.
+LangFORM may convert useful results into Context Frames.
 
 ## Model Independence
 
-LangFORM should not require a specific Main LLM provider.
-
-The Context Package should be usable by adapters for different models.
-
-The local SLM should also be accessed through a model adapter rather than hard-coded to one runtime.
+Model adapters should isolate provider-specific request and response formats from LangFORM core.
 
 ## Platform Independence
 
-LangFORM does not control:
-- application UI
-- authentication
-- user account management
-- web search implementation
-- code execution implementation
-- external API implementation
-- browser automation
-- email operations
-- final display of results
-
-LangFORM communicates through its defined input and output structures.
-
-## Protocol Evolution
-
-This protocol is an initial specification for v0.0.1.
-
-Field names, statuses, schemas, and message types may evolve as the framework is implemented and tested.
+LangFORM does not control the application's UI, authentication, web-search implementation, code runner, browser automation, email system, external APIs, or final display.

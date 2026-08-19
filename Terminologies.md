@@ -2,29 +2,28 @@
 
 This file defines the shared vocabulary used by LangFORM.
 
-The definitions are intended to be understandable by the LangFORM core, the local SLM, Main LLMs, platform applications, external agents, adapters, tools, and contributors.
-
-This file is expected to grow as LangFORM develops.
-
 ## Core Concepts
 
 ### LangFORM
 A framework for context, memory, retrieval, and orchestration in LLM-based and agentic AI applications.
 
 ### Context Frame
-A semantically meaningful unit of information prepared for retrieval or model context. A Context Frame should represent a coherent unit of meaning rather than an arbitrary fixed-size text chunk.
+A semantically meaningful unit of information prepared for retrieval or model context. A Context Frame represents a coherent unit of meaning rather than an arbitrary fixed-size text chunk.
 
 ### Context Set
 A collection of Context Frames selected for a specific model interaction.
 
 ### Context Retrieval
-The process of identifying and selecting Context Frames relevant to the current information need.
+The process of identifying and selecting Context Frames relevant to an information need.
 
 ### Context Sufficiency
-A determination of whether the currently supplied Context Set contains enough information for the Main LLM to proceed reliably.
+A determination of whether the current Context Set contains enough information for a Main LLM to proceed reliably.
+
+### Context Package
+A structured LangFORM output containing the user query, selected Context Frames, relevant memory, provenance, status, and optional requests.
 
 ### Orchestration
-The coordination of context preparation and model interactions across LangFORM, the local SLM, the Main LLM, and the surrounding application.
+The coordination of context preparation and model interactions across LangFORM, a local SLM, a Main LLM, and the surrounding application.
 
 ## Asset Concepts
 
@@ -35,13 +34,13 @@ A user-authorized information resource known to LangFORM.
 An Asset uploaded through the surrounding application and stored in a LangFORM-managed upload location.
 
 ### Local Asset
-An Asset that remains in its original location on the user's local system and is referenced by path.
+An Asset that remains in its original location and is referenced by path.
 
 ### Web Asset
 An Asset referenced through a web URL.
 
 ### Asset Reference
-The location information LangFORM uses to identify or access an Asset, such as a local path or web URL.
+The location information LangFORM uses to identify or access an Asset.
 
 ### Asset Record
 LangFORM's structured record describing a registered Asset.
@@ -56,10 +55,10 @@ Structured technical and semantic information describing an Asset.
 Information such as file name, path, reference type, file type, file size, creation date, modification date, hash, version, and availability status.
 
 ### Semantic Metadata
-Information such as content summary, document type, topics, keywords, entities, relationships, and related Context Frame IDs.
+Information such as summary, document type, topics, keywords, entities, relationships, and related Context Frame IDs.
 
 ### Asset Relationship
-A supported relationship between two or more Assets, such as related topic, source dependency, version relationship, or another meaningful connection.
+A supported relationship between Assets.
 
 ### Provenance
 Information identifying where content or a Context Frame originated.
@@ -67,10 +66,10 @@ Information identifying where content or a Context Frame originated.
 ## Model Concepts
 
 ### Local SLM
-The local Small Language Model used by LangFORM for prompt analysis, asset understanding, metadata generation, semantic organization, retrieval support, memory organization, and context preparation.
+A Small Language Model used locally for prompt analysis, asset understanding, metadata generation, semantic organization, retrieval support, memory organization, and context preparation.
 
 ### Main LLM
-The model used primarily for deeper reasoning and final response generation.
+A model used primarily for deeper reasoning and final response generation.
 
 ### Model Request
 A structured request sent to a model.
@@ -84,13 +83,13 @@ A structured response returned by a model.
 Persistent information retained by LangFORM for future interactions.
 
 ### Conversation Memory
-Information derived from prior user and model interactions that may be useful in later turns.
+Information derived from prior user and model interactions that may be useful later.
 
 ### Asset Memory
-Persistent knowledge about registered Assets, their metadata, summaries, Context Frames, and relationships.
+Persistent knowledge about registered Assets, metadata, summaries, Context Frames, and relationships.
 
 ### Framework Memory
-Operational information used by LangFORM, such as configuration, registered capabilities, workflow state, and internal references.
+Operational information used by LangFORM.
 
 ## Processing Concepts
 
@@ -98,10 +97,10 @@ Operational information used by LangFORM, such as configuration, registered capa
 Information created from an Asset through processing, such as extracted structure, summaries, metadata, semantic sections, and Context Frames.
 
 ### Generated Artifact
-A new file intentionally created during an application workflow, such as a report, draft, code file, export, or analysis result.
+A new file intentionally created during an application workflow.
 
 ### Capability
-A task that can be performed by LangFORM or by the surrounding platform through an available implementation.
+A task that can be performed by LangFORM or by the surrounding platform.
 
 ### Tool
 A callable implementation that performs a capability.
@@ -110,18 +109,18 @@ A callable implementation that performs a capability.
 A component that translates between LangFORM's internal interface and an external model, runtime, service, or platform.
 
 ### Registry
-A structured collection of records describing resources, capabilities, or other known LangFORM objects.
+A structured collection of records describing resources or capabilities.
 
 ### Session
-A logical interaction context that groups related user requests, responses, memory, and state.
+A logical interaction context grouping related user requests, responses, memory, and state.
 
 ## Orchestration Concepts
 
 ### Action Request
-A structured indication that an additional action is required before the workflow can continue.
+A structured indication that another action is required before a workflow can continue.
 
 ### External Action
-An action that must be performed by the surrounding platform or agent runtime rather than by LangFORM itself.
+An action performed by the surrounding platform or agent runtime instead of LangFORM core.
 
 ### Context Request
 A request for additional information or Context Frames.
@@ -129,22 +128,19 @@ A request for additional information or Context Frames.
 ### Iteration
 One cycle of context preparation, model interaction, evaluation, and possible context expansion.
 
-### Context Package
-A structured LangFORM output containing the user's request, selected Context Frames, relevant memory, provenance, status, and other information needed by a receiving model or application.
-
-## Initial Status Terms
+## Status Terms
 
 ### context_ready
-LangFORM has prepared a Context Package that is ready for use.
+Relevant context has been prepared.
 
 ### more_context_required
-The current Context Set is insufficient and additional retrieval is required.
+Additional Context Frames or memory are needed.
 
 ### external_action_required
-The workflow requires an action that should be performed by the surrounding application or agent runtime.
+The surrounding application needs to perform an action.
 
 ### final
-The workflow has reached a state where no additional LangFORM context operation is required.
+No additional LangFORM context operation is required.
 
 ### error
-LangFORM cannot continue the requested operation without resolving an error.
+LangFORM cannot continue until an error is resolved.

@@ -1,27 +1,19 @@
-# Python
 __pycache__/
 *.py[cod]
-*.pyd
-.venv/
-venv/
-env/
-
-# Build
+*.egg-info/
 build/
 dist/
-*.egg-info/
-
-# IDE
-.vscode/
-.idea/
-
-# Environment and secrets
+.venv/
+venv/
 .env
 .env.*
-*.key
-*.pem
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
 
-# LangFORM local/private runtime data
+# LangFORM runtime/private data
+.langform/
 uploaded_assets/
 memory/
 frames/
@@ -30,11 +22,6 @@ generated_artifacts/
 logs/
 cache/
 
-# Local models and model files
+# Local model files
 *.gguf
-*.bin
 models/
-
-# OS
-.DS_Store
-Thumbs.db
