@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "langform"
+version = "0.2.0"
+description = "Open-source context, memory, retrieval, and orchestration framework for LLM and agentic AI applications."
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+  {name = "Nurdin Kaparov"}
+]
+keywords = ["llm", "agents", "context", "memory", "retrieval", "orchestration", "rag"]
+
+[project.optional-dependencies]
+documents = [
+  "pypdf>=5.0",
+  "python-docx>=1.1",
+  "openpyxl>=3.1"
+]
+ollama = [
+  "requests>=2.31"
+]
+all = [
+  "pypdf>=5.0",
+  "python-docx>=1.1",
+  "openpyxl>=3.1",
+  "requests>=2.31"
+]
+dev = [
+  "pytest>=8.0"
+]
+
+[project.scripts]
+langform = "langform.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
