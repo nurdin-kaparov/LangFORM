@@ -26,10 +26,9 @@ def run_demo() -> int:
         lf = LangFORM(workspace=root / ".langform")
         asset = lf.register_asset(str(sample))
         lf.analyze_asset(asset.asset_id)
-        lf.add_memory("user", "I am interested in how LangFORM handles retrieval.")
         package = lf.prepare_context("How does LangFORM use Context Frames for retrieval?", top_k=3)
 
-        print("LangFORM demo completed successfully.\n")
+        print("Local extraction demo completed. Context selection requires an installed model.\n")
         _print(package.to_dict())
     return 0
 
@@ -53,13 +52,20 @@ def main(argv=None) -> int:
     p_q.add_argument("query")
     p_q.add_argument("--top-k", type=int, default=5)
 
-    p_assets = sub.add_parser("assets", help="List registered assets")
-
-    p_mem = sub.add_parser("memory-add", help="Add conversation memory")
-    p_mem.add_argument("role", choices=["user", "assistant", "system"])
-    p_mem.add_argument("content")
-
-    sub.add_parser("memory-clear", help="Clear conversation memory")
+    sub.add_parser("assets", help="List registered Assets")
+    p_frames = sub.add_parser("frames", help="List Context Frames")
+    p_frames.add_argument("--asset-id")
+    p_frames.add_argument("--history", action="store_true")
+    sub.add_parser("models", help="Show actual local model availability")
+    p_install = sub.add_parser("model-install", help="Download a supported model via Ollama")
+    p_install.add_argument("model_id")
+    p_select = sub.add_parser("model-select", help="Select an installed local model")
+    p_select.add_argument("model_id")
+    p_refine = sub.add_parser("refine", help="Create a purposeful frame revision")
+    p_refine.add_argument("frame_id")
+    p_refine.add_argument("--note", required=True)
+    sub.add_parser("packages", help="List saved Context Packages")
+    sub.add_parser("mcp", help="Serve the local MCP interface over stdio")
 
     args = parser.parse_args(argv)
 
@@ -88,13 +94,29 @@ def main(argv=None) -> int:
         _print([a.to_dict() for a in lf.list_assets()])
         return 0
 
-    if args.command == "memory-add":
-        _print(lf.add_memory(args.role, args.content).to_dict())
+    if args.command == "frames":
+        _print([frame.to_dict() for frame in lf.list_frames(args.asset_id, args.history)])
         return 0
-
-    if args.command == "memory-clear":
-        lf.clear_memory()
-        print("Conversation memory cleared.")
+    if args.command == "models":
+        _print(lf.model_status())
+        return 0
+    if args.command == "model-install":
+        lf.install_model(args.model_id, on_progress=_print)
+        return 0
+    if args.command == "model-select":
+        _print({"selected_model_id": lf.select_model(args.model_id)})
+        return 0
+    if args.command == "refine":
+        _print([frame.to_dict() for frame in lf.refine_frame(args.frame_id, args.note)])
+        return 0
+    if args.command == "packages":
+        _print(lf.list_packages())
+        return 0
+    if args.command == "mcp":
+        import os
+        os.environ["LANGFORM_WORKSPACE"] = args.workspace
+        from .mcp_server import main as serve
+        serve()
         return 0
 
     return 1

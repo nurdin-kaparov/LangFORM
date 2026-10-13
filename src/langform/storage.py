@@ -14,10 +14,8 @@ class JSONStore:
     def load(self) -> Any:
         if not self.path.exists():
             return self.default.copy() if hasattr(self.default, "copy") else self.default
-        try:
-            return json.loads(self.path.read_text(encoding="utf-8"))
-        except (json.JSONDecodeError, OSError):
-            return self.default.copy() if hasattr(self.default, "copy") else self.default
+        # A corrupt registry is a visible error, never an empty replacement.
+        return json.loads(self.path.read_text(encoding="utf-8"))
 
     def save(self, value: Any) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
