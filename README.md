@@ -1,193 +1,74 @@
-# LangFORM
+# LangFORM 0.3.0
 
-**Version:** v0.0.2-2026.08.18
+A local-first Python package for organizing approved sources into source-grounded Context Packages for an external agent.
 
-LangFORM is an open-source context, memory, retrieval, and orchestration framework for LLM and agentic AI applications.
+LangFORM registers local Assets, extracts supported document structure, uses an Ollama-hosted local SLM to form and select semantic Context Frames, maintains an index, and retrieves original evidence for a question. The consuming application remains responsible for its own tools, planning, and final answer.
 
-Its purpose is simple:
+## Requirements
 
-> Give models the right context, not all available context.
+- Python 3.11 or later
+- Ollama and a supported model installed locally for semantic formation and context selection
+- Model weights are not included or downloaded automatically
 
-LangFORM can register user-authorized assets, extract text, create semantically useful Context Frames, store metadata, retrieve relevant frames for a user query, maintain lightweight conversation memory, and prepare a structured Context Package for a Main LLM or surrounding agent application.
-
-## What Works in v0.0.2
-
-This version includes working Python code for:
-
-- Asset registration
-- Local-file references
-- Uploaded-asset registration
-- Technical and semantic metadata
-- Text extraction from TXT, MD, JSON, and CSV files
-- Optional PDF, DOCX, and XLSX extraction when the related packages are installed
-- Context Frame creation
-- Context Frame persistence
-- Simple relevance retrieval
-- Conversation memory
-- Context Package creation
-- JSON-based registries
-- Optional local SLM communication through Ollama
-- Command-line interface
-- Basic tests
-
-The framework is intentionally UI-independent. A developer can use LangFORM underneath a web app, desktop app, API, CLI, or another agent runtime.
-
-## Installation
-
-Clone the repository:
+## Install from this repository
 
 ```bash
 git clone https://github.com/nurdin-kaparov/LangFORM.git
 cd LangFORM
+python -m venv .venv
+# Activate .venv, then:
+python -m pip install -e ".[all]"
 ```
 
-Create and activate a virtual environment if desired, then install:
+The `all` extra installs document readers, the Ollama client, and MCP support. Install only the extras your integration needs by consulting `pyproject.toml`.
 
-```bash
-pip install -e .
-```
-
-Optional file-reader support:
-
-```bash
-pip install -e ".[documents]"
-```
-
-Optional Ollama support:
-
-```bash
-pip install -e ".[ollama]"
-```
-
-Install everything:
-
-```bash
-pip install -e ".[all]"
-```
-
-## Quick Test
-
-After installation:
-
-```bash
-langform demo
-```
-
-or:
-
-```bash
-python -m langform demo
-```
-
-This runs a self-contained demo without requiring an external LLM.
-
-## Analyze a File
-
-```bash
-langform analyze path/to/file.txt
-```
-
-LangFORM will:
-
-1. register the file as an Asset,
-2. extract its text,
-3. generate metadata,
-4. create Context Frames,
-5. store the records locally.
-
-## Ask for Context
-
-```bash
-langform query "What does the document say about memory?"
-```
-
-LangFORM searches stored Context Frames and returns a Context Package as JSON.
-
-## Python Example
+## Python usage
 
 ```python
-from langform import LangFORM
+from langform import ContextSubagent
 
-lf = LangFORM(workspace=".langform")
+context = ContextSubagent(workspace=".langform")
+context.select_model("<an installed supported Ollama model tag>")
 
-asset = lf.register_asset("notes.txt")
-lf.analyze_asset(asset.asset_id)
+# Register only a file the user has approved for this workspace.
+asset = context.register_asset("./knowledge.md")
+context.analyze_asset(asset.asset_id)
 
-package = lf.prepare_context(
-    "What does the file say about retrieval?",
+package = context.prepare_context(
+    "What evidence supports the proposed deadline?",
     top_k=5,
+    asset_ids=[asset.asset_id],
 )
 
-print(package.to_dict())
+if package.status != "context_ready":
+    raise RuntimeError(f"Context is not ready: {package.status}")
+
+print(package.to_dict())  # original evidence, coordinates, and selection details
 ```
 
-## Optional Ollama Local SLM
+Check the returned Package status and original source evidence before using it. Generated summaries and Frame descriptions guide retrieval; they are not substitutes for source content. Changed or unavailable sources and unavailable models must be reported explicitly, not silently replaced with outside information.
 
-If Ollama is running locally:
+## MCP and command line
 
-```python
-from langform.models import OllamaSLM
+Install the MCP extra, then configure the consuming application to launch `langform-mcp` over stdio. Set `LANGFORM_WORKSPACE` to a private local workspace. MCP entry points are called by the external application; they are not autonomous tools given to the Context SLM.
 
-slm = OllamaSLM(model="gemma3:4b")
-print(slm.generate("Summarize this sentence: LangFORM manages context."))
+The `langform` command provides local setup, model, Asset, analysis, and Package operations. Run `langform --help` or `langform <command> --help` to inspect the installed command options.
+
+## Scope and privacy
+
+- The Context SLM reads supplied, approved sources; it does not search the internet or discover additional sources.
+- Source registration does not authorize arbitrary local paths. Grant access only to files the owner approves.
+- Keep `.langform` workspaces and returned Packages private; they may contain source metadata and original excerpts.
+- The Python package, local workspace, hosted project, and any external agent are separate components. Their credentials, scope, and records are not interchangeable.
+
+## Test
+
+```bash
+python -m pytest
 ```
 
-The core LangFORM package does not require Ollama to run.
+## Windows companion
 
-## Asset Handling
-
-LangFORM distinguishes among:
-
-- `local_path`: the original file remains where the user keeps it.
-- `uploaded_file`: the application may copy the uploaded file into LangFORM's managed `uploaded_assets` folder.
-- `web_url`: registered as a reference in v0.0.2. Automatic downloading is intentionally not performed by the core.
-
-## Workspace
-
-Runtime data is stored separately from source code:
-
-```text
-.langform/
-├── registry/
-│   └── assets.json
-├── frames/
-│   └── frames.json
-├── memory/
-│   └── conversation.json
-└── uploaded_assets/
-```
-
-The workspace can be changed when creating `LangFORM`.
-
-## Current Retrieval Method
-
-v0.0.2 uses a transparent keyword-overlap scoring method. It is deliberately simple and dependency-free.
-
-Later versions can add embedding-based retrieval, hybrid retrieval, reranking, and more advanced semantic orchestration without changing the basic Context Frame interface.
-
-## Important Boundary
-
-LangFORM focuses on context intelligence.
-
-The surrounding platform or agent runtime remains responsible for general-purpose actions such as:
-
-- web search
-- Python execution
-- shell execution
-- browser actions
-- email
-- external API calls
-
-LangFORM can receive results from those tools and convert useful information into context.
-
-## Core Files
-
-- `Terminologies.md`
-- `System_Instructions.md`
-- `Orchestration_Protocol.md`
-
-These files define LangFORM's shared language, local SLM role, and structured communication principles.
-
-## License
+Packaging source is in `local-setup/`. Build the Windows executable on a Windows x64 machine with Python 3.11 using `local-setup/build-windows.ps1`. The executable is not included in this source update; do not treat packaging sources as a built or signed installer.
 
 MIT License.

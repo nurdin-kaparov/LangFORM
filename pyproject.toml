@@ -4,15 +4,18 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "langform"
-version = "0.0.2"
-description = "Open-source context, memory, retrieval, and orchestration framework for LLM and agentic AI applications."
+version = "0.3.0"
+description = "Local-first Context Intelligence for indexing Assets and forming source-grounded Context Packages."
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 license = {text = "MIT"}
 authors = [
   {name = "Nurdin Kaparov"}
 ]
-keywords = ["llm", "agents", "context", "memory", "retrieval", "orchestration", "rag"]
+keywords = ["context-intelligence", "context-frames", "retrieval", "local-llm", "mcp"]
+dependencies = [
+    "openpyxl>=3.1",
+]
 
 [project.optional-dependencies]
 documents = [
@@ -23,11 +26,15 @@ documents = [
 ollama = [
   "requests>=2.31"
 ]
+mcp = [
+  "mcp[cli]>=2.0,<3.0"
+]
 all = [
   "pypdf>=5.0",
   "python-docx>=1.1",
   "openpyxl>=3.1",
-  "requests>=2.31"
+  "requests>=2.31",
+  "mcp>=2.0,<3.0"
 ]
 dev = [
   "pytest>=8.0"
@@ -35,6 +42,11 @@ dev = [
 
 [project.scripts]
 langform = "langform.cli:main"
+langform-mcp = "langform.mcp_server:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests/python"]
+python_files = ["test_*.py"]

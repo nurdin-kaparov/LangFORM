@@ -5,23 +5,23 @@ from .schemas import ContextFrame
 
 
 class SimpleRetriever:
-    """Dependency-free baseline retriever using weighted token overlap."""
+    """Transparent lexical candidate narrowing, never final Context Formation."""
 
     def score(self, query: str, frame: ContextFrame) -> float:
         q = set(tokenize(query))
         if not q:
             return 0.0
 
-        content_tokens = set(tokenize(frame.content))
+        location_tokens = set(tokenize(frame.structural_location))
         keyword_tokens = set(k.lower() for k in frame.keywords)
         summary_tokens = set(tokenize(frame.summary))
 
-        content_overlap = len(q & content_tokens) / len(q)
+        location_overlap = len(q & location_tokens) / len(q)
         keyword_overlap = len(q & keyword_tokens) / len(q)
         summary_overlap = len(q & summary_tokens) / len(q)
 
         return round(
-            (0.55 * content_overlap) +
+            (0.55 * location_overlap) +
             (0.30 * keyword_overlap) +
             (0.15 * summary_overlap),
             6
@@ -35,7 +35,7 @@ class SimpleRetriever:
         asset_ids: list[str] | None = None,
     ) -> list[ContextFrame]:
         candidates = frames
-        if asset_ids:
+        if asset_ids is not None:
             allowed = set(asset_ids)
             candidates = [f for f in frames if f.source_id in allowed]
 
@@ -44,7 +44,26 @@ class SimpleRetriever:
             score = self.score(query, frame)
             copy = ContextFrame.from_dict(frame.to_dict())
             copy.score = score
-            scored.append(copy)
+            if copy.is_current:
+                scored.append(copy)
 
         scored.sort(key=lambda f: (f.score or 0.0), reverse=True)
-        return scored[:max(1, top_k)]
+        by_id = {frame.frame_id: frame for frame in scored}
+        result: list[ContextFrame] = []
+        included: set[str] = set()
+        limit = max(1, top_k)
+        for frame in scored:
+            chain = [frame]
+            seen = {frame.frame_id}
+            parent = by_id.get(frame.parent_frame_id)
+            while parent and parent.frame_id not in seen:
+                chain.insert(0, parent)
+                seen.add(parent.frame_id)
+                parent = by_id.get(parent.parent_frame_id)
+            for item in chain:
+                if item.frame_id not in included:
+                    if len(result) >= limit:
+                        return result
+                    result.append(item)
+                    included.add(item.frame_id)
+        return result

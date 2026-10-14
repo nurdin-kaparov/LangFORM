@@ -1,0 +1,22 @@
+{
+  "supported4b": {
+    "general.architecture": "gemma3",
+    "general.parameter_count": 4294967296,
+    "gemma3.block_count": 34,
+    "gemma3.embedding_length": 2560,
+    "gemma3.attention.head_count": 8,
+    "gemma3.attention.head_count_kv": 4
+  },
+  "unsupported12b": {
+    "general.architecture": "gemma3",
+    "gemma3.block_count": 48,
+    "gemma3.embedding_length": 3840,
+    "gemma3.attention.head_count": 16,
+    "gemma3.attention.head_count_kv": 8
+  },
+  "unavailable": {},
+  "incomplete": {
+    "general.architecture": "gemma3",
+    "general.parameter_count": 4300000000
+  }
+}
